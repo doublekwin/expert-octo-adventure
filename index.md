@@ -1,8 +1,4 @@
 <html>
-    <head>
-        <title>My Website</title>
-        <link rel="stylesheet" type="text/css" href="/css/main.css">
-    </head>
 <body>
     <h1>My Goto Sites</h1>
         <ul>
