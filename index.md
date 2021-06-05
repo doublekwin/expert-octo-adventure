@@ -1,37 +1,17 @@
-## Welcome to GitHub Pages
-
-You can use the [editor on GitHub](https://github.com/doublekwin/expert-octo-adventure/edit/gh-pages/index.md) to maintain and preview the content for your website in Markdown files.
-
-Whenever you commit to this repository, GitHub Pages will run [Jekyll](https://jekyllrb.com/) to rebuild the pages in your site, from the content in your Markdown files.
-
-### Markdown
-
-Markdown is a lightweight and easy-to-use syntax for styling your writing. It includes conventions for
-
-```markdown
-Syntax highlighted code block
-
-# Header 1
-## Header 2
-### Header 3
-
-- Bulleted
-- List
-
-1. Numbered
-2. List
-
-**Bold** and _Italic_ and `Code` text
-
-[Link](url) and ![Image](src)
-```
-
-For more details see [GitHub Flavored Markdown](https://guides.github.com/features/mastering-markdown/).
-
-### Jekyll Themes
-
-Your Pages site will use the layout and styles from the Jekyll theme you have selected in your [repository settings](https://github.com/doublekwin/expert-octo-adventure/settings/pages). The name of this theme is saved in the Jekyll `_config.yml` configuration file.
-
-### Support or Contact
-
-Having trouble with Pages? Check out our [documentation](https://docs.github.com/categories/github-pages-basics/) or [contact support](https://support.github.com/contact) and we’ll help you sort it out.
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>My Website</title>
+        <link rel="stylesheet" type="text/css" href="/css/main.css">
+    </head>
+<h1>My Goto Sites</h1>
+<ul>
+    <li><a href="https://www.twitch.tv" target="_blank">TwitchTv</a></li>
+    <li><a href="https://www.twitch.tv/xqcow" target="_blank">TwitchTV XQC</a></li>
+    <li><a href="https://www.twitch.tv/destiny" target="_blank">TwitchTV Destiny</a></li>
+    <li><a href="https://www.amazon.com/" target="_blank">Amazon</a></li>
+    <li><a href="https://www.netflix.com/browse" target="_blank">NetFlix</a></li>
+    <li><a href="https://vault.bitwarden.com/#/" target="_blank">Bitwarden</a></li>
+    <li><a href="https://mail.google.com/mail/u/0/#inbox" target="_blank">Gmail</a></li>
+</ul>
+</html>
