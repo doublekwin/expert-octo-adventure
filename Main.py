@@ -1,7 +1,8 @@
-from PyQt6.QtWidgets import QApplication, QLabel, QWidget, QGridLayout, QLineEdit, QPushButton, QMainWindow, QTableWidget, QStatusBar, QTableWidgetItem, QDialog, QVBoxLayout, QComboBox, QToolBar, QMessageBox
+from PyQt6.QtWidgets import QApplication, QLabel, QWidget, QGridLayout, QLineEdit, QPushButton, QMainWindow, QTableWidget, QStatusBar, QTableWidgetItem, QDialog, QVBoxLayout, QComboBox, QToolBar, QMessageBox, QCheckBox
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QAction, QIcon
 
+from datetime import date
 from PyQt6 import QtCore, QtWidgets
 
 import sys
@@ -9,7 +10,7 @@ import sqlite3
 from datetime import datetime
 
 
-# day        395
+# day      397
 
 class DatabaseConnection:
     def __init__(self, database_file="database.db"):
@@ -38,13 +39,17 @@ class MainWindow(QMainWindow):
         help_menu_item.addAction(about_action)
         about_action.triggered.connect(self.about)
 
-        search_action = QAction(QIcon("icons/icons/search.png"), "Search", self)
+        search_action = QAction(QIcon("icons/icons/search.png"), "&Search", self)
         edit_menu_item.addAction(search_action)
         search_action.triggered.connect(self.search)
 
+        legend_action = QAction(QIcon("icons/icons/Legend.png"), "&Legend", self)
+        help_menu_item.addAction(legend_action)
+        legend_action.triggered.connect(self.legend)
+
         self.table = QTableWidget()
-        self.table.setColumnCount(8)
-        self.table.setHorizontalHeaderLabels(("ID", "Balance", "payment", "remaining", "number"))
+        self.table.setColumnCount(6)
+        self.table.setHorizontalHeaderLabels(("ID", "Balance", "payment", "remaining", "number", "Date"))  # add label and boxes for date option around 330 line
         self.table.verticalHeader().setVisible(False)
         self.setCentralWidget(self.table)
 
@@ -54,6 +59,7 @@ class MainWindow(QMainWindow):
         self.addToolBar(toolbar)
         toolbar.addAction(add_bill_action)
         toolbar.addAction(search_action)
+        toolbar.addAction(legend_action)
 
         # create status bar
         self.statusbar = QStatusBar()
@@ -78,7 +84,7 @@ class MainWindow(QMainWindow):
         self.statusbar.addWidget(delete_button)
 
     def load_data(self):         # connects the db and adds in the information.
-        connection = sqlite3.connect("database.db")  # replace with above new class and other instances below
+        connection = DatabaseConnection().connect()
         result = connection.execute("SELECT * FROM students")
         self.table.setRowCount(0)
         for row_number, row_data in enumerate(result):
@@ -108,6 +114,10 @@ class MainWindow(QMainWindow):
         dialog = AboutDialog()
         dialog.exec()
 
+    def legend(self):
+        dialog = legend()
+        dialog.exec()
+
 
 class EditDialog(QDialog):
     def __init__(self):
@@ -120,9 +130,9 @@ class EditDialog(QDialog):
         payment = main_window.table.item(index, 2).text()
         remaining = main_window.table.item(index, 3).text()
         reference = main_window.table.item(index, 4).text()
+        # date = main_window.table.item(index, 5).text()
 
         self.bill_id = main_window.table.item(index, 0).text()
-
         edit_ballabel = QLabel("Balance")
         self.edit_balance_vb = QLineEdit(balance)
         edit_paylabel = QLabel("Payment")
@@ -132,6 +142,7 @@ class EditDialog(QDialog):
         edit_referelabel = QLabel("Reference")
         self.edit_reference_vb = QLineEdit(reference)
         edit_button_vb = QPushButton("Edit Record")
+        # self.edit_date_vb = QLineEdit(date)
         edit_button_vb.clicked.connect(self.update_bill)
 
         vbl.addWidget(edit_ballabel)
@@ -143,11 +154,13 @@ class EditDialog(QDialog):
         vbl.addWidget(edit_referelabel)
         vbl.addWidget(self.edit_reference_vb)
         vbl.addWidget(edit_button_vb)
+        #vbl.addWidget(self.edit_date_vb)
 
         self.setLayout(vbl)
 
     def update_bill(self):
-        connection = sqlite3.connect("database.db")
+        connection = DatabaseConnection().connect()
+        #connection = sqlite3.connect("database.db")
         cursor = connection.cursor()
         cursor.execute("UPDATE students SET Balance = ?, payment = ?, remaining = ?, number = ? WHERE id = ?",
                        (self.edit_balance_vb.text(),
@@ -160,6 +173,8 @@ class EditDialog(QDialog):
         connection.close()
         # refresh the table
         main_window.load_data()
+
+        self.close()
 
 
 class DeleteDialog(QDialog):
@@ -184,7 +199,8 @@ class DeleteDialog(QDialog):
         index = main_window.table.currentRow()
         bill_id = main_window.table.item(index, 0).text()
 
-        connection = sqlite3.connect("database.db")
+        connection = DatabaseConnection().connect()
+        #connection = sqlite3.connect("database.db")
         cursor = connection.cursor()
         cursor.execute("DELETE from students WHERE id = ?", (bill_id, ))
         connection.commit()
@@ -200,7 +216,6 @@ class DeleteDialog(QDialog):
         confirmation_widget.exec()
 
 
-
 class InsertDialog(QDialog):    # window to fill in new information.
 
     def __init__(self):
@@ -209,23 +224,37 @@ class InsertDialog(QDialog):    # window to fill in new information.
 
         layout = QGridLayout()
 
+        today = date.today()
+        d1 = today.strftime("%d/%m/%Y")
+
+
         # Small CC
         preSM_Citizens_CC_label = QLabel("Small Citizens CC Balance:")
+        preSM_Citizens_CC_label.setHidden(True)
         self.preSM_Citizens_CC_edit = QLineEdit("0")
+        preSM_cbox = QCheckBox("Add")
+        preSM_Date = QLabel("Date:")
+        self.preSM_Date_edit = QLineEdit(f"{d1}")
         layout.addWidget(preSM_Citizens_CC_label, 0, 0)
         layout.addWidget(self.preSM_Citizens_CC_edit, 0, 1)
+        layout.addWidget(preSM_cbox, 0, 8)
+        layout.addWidget(preSM_Date, 0, 9)
+        layout.addWidget(self.preSM_Date_edit, 0, 10)
 
         sm_citiz_CC_label = QLabel("Small Citizens CC Payment:")
+        sm_citiz_CC_label.setHidden(True)
         self.sm_citiz_CC_edit = QLineEdit("0")
         layout.addWidget(sm_citiz_CC_label, 0, 2)
         layout.addWidget(self.sm_citiz_CC_edit, 0, 3)
 
         postSM_citiz_CC_label = QLabel("Small Citizens CC Remaining:")
+        postSM_citiz_CC_label.setHidden(True)
         self.postSM_citiz_CC_edit = QLineEdit("0")
         layout.addWidget(postSM_citiz_CC_label, 0, 4)
         layout.addWidget(self.postSM_citiz_CC_edit, 0, 5)
 
         smc_ref_label = QLabel("Small CC Reference number:")
+        smc_ref_label.setHidden(True)
         self.sm_ref_num_edit = QLineEdit("0")
         layout.addWidget(smc_ref_label, 0, 6)
         layout.addWidget(self.sm_ref_num_edit, 0, 7)
@@ -233,84 +262,124 @@ class InsertDialog(QDialog):    # window to fill in new information.
         # Large CC
 
         preLG_Citizens_CC_label = QLabel("Large Citizens CC Balance:")
+        preLG_Citizens_CC_label.setHidden(True)
         self.preLG_Citizens_CC_edit = QLineEdit("0")
+        self.preLG_cbox = QCheckBox("Add")
+        preLG_Date = QLabel("Date:")
+        self.preLG_Date_edit = QLineEdit(f"{d1}")
         layout.addWidget(preLG_Citizens_CC_label, 1, 0)
         layout.addWidget(self.preLG_Citizens_CC_edit, 1, 1)
+        layout.addWidget(self.preLG_cbox, 1, 8)
+        layout.addWidget(preLG_Date, 1, 9)
+        layout.addWidget(self.preLG_Date_edit, 1, 10)
 
         lgcitiz_CC_label = QLabel("Large Citizens CC Payment:")
+        lgcitiz_CC_label.setHidden(True)
         self.lgcitiz_CC_edit = QLineEdit("0")
         layout.addWidget(lgcitiz_CC_label, 1, 2)
         layout.addWidget(self.lgcitiz_CC_edit, 1, 3)
 
         postLG_Citizens_CC_label = QLabel("Large Citizens CC Remaining:")
+        postLG_Citizens_CC_label.setHidden(True)
         self.postLG_Citizens_CC_edit = QLineEdit("0")
         layout.addWidget(postLG_Citizens_CC_label, 1, 4)
         layout.addWidget(self.postLG_Citizens_CC_edit, 1, 5)
 
         lgc_ref_label = QLabel("Large CC Reference Number:")
+        lgc_ref_label.setHidden(True)
         self.lgc_ref_edit = QLineEdit("0")
         layout.addWidget(lgc_ref_label, 1, 6)
         layout.addWidget(self.lgc_ref_edit, 1, 7)
 
         # Chase ending in 64
         pre64_Chase_CC_label = QLabel("Chase 64 CC Balance:")
+        pre64_Chase_CC_label.setHidden(True)
         self.pre64_Chase_CC_edit = QLineEdit("0")
+        self.pre64_cbox = QCheckBox("Add")
+        pre64_Date = QLabel("Date:")
+        self.pre64_Date_edit = QLineEdit(f"{d1}")
         layout.addWidget(pre64_Chase_CC_label, 2, 0)
         layout.addWidget(self.pre64_Chase_CC_edit, 2, 1)
+        layout.addWidget(self.pre64_cbox, 2, 8)
+        layout.addWidget(pre64_Date, 2, 9)
+        layout.addWidget(self.pre64_Date_edit, 2, 10)
 
         chase64_CC_label = QLabel("Chase 64 CC Payment:")
+        chase64_CC_label.setHidden(True)
         self.chase64_CC_edit = QLineEdit("0")
         layout.addWidget(chase64_CC_label, 2, 2)
         layout.addWidget(self.chase64_CC_edit, 2, 3)
 
         post64_Chase_CC_label = QLabel("Chase 64 CC Remaining:")
+        post64_Chase_CC_label.setHidden(True)
         self.post64_Chase_CC_edit = QLineEdit("0")
         layout.addWidget(post64_Chase_CC_label, 2, 4)
         layout.addWidget(self.post64_Chase_CC_edit, 2, 5)
 
         ch64_ref_label = QLabel("Chase 64 CC Reference Number:")
+        ch64_ref_label.setHidden(True)
         self.ch64_ref_edit = QLineEdit("0")
         layout.addWidget(ch64_ref_label, 2, 6)
         layout.addWidget(self.ch64_ref_edit, 2, 7)
 
         # Chase ending in 20
         pre20_Chase_CC_label = QLabel("Chase 20 Balance:")
+        pre20_Chase_CC_label.setHidden(True)
         self.pre20_Chase_CC_edit = QLineEdit("0")
+        self.pre20_cbox = QCheckBox("Add")
+        pre20_Date = QLabel("Date:")
+        self.pre20_Date_edit = QLineEdit(f"{d1}")
         layout.addWidget(pre20_Chase_CC_label, 3, 0)
         layout.addWidget(self.pre20_Chase_CC_edit, 3, 1)
+        layout.addWidget(self.pre20_cbox, 3, 8)
+        layout.addWidget(pre20_Date, 3, 9)
+        layout.addWidget(self.pre20_Date_edit, 3, 10)
 
         chase20_CC_label = QLabel("Chase 20 CC Payment:")
+        chase20_CC_label.setHidden(True)
         self.chase20_CC_edit = QLineEdit("0")
         layout.addWidget(chase20_CC_label, 3, 2)
         layout.addWidget(self.chase20_CC_edit, 3, 3)
 
         post20_Chase_CC_label = QLabel("Chase 20 C Remaining:")
+        post20_Chase_CC_label.setHidden(True)
         self.post20_Chase_CC_edit = QLineEdit("0")
         layout.addWidget(post20_Chase_CC_label, 3, 4)
         layout.addWidget(self.post20_Chase_CC_edit, 3, 5)
 
         ch20_ref_label = QLabel("Chase 20 CC Reference Number:")
+        ch20_ref_label.setHidden(True)
         self.ch20_ref_edit = QLineEdit("0")
         layout.addWidget(ch20_ref_label, 3, 6)
         layout.addWidget(self.ch20_ref_edit, 3, 7)
 
         # CapitalOne
         preCapital_CC_label = QLabel("Capital One Balance:")
+        preCapital_CC_label.setHidden(True)
         self.preCapital_CC_edit = QLineEdit("0")
+        self.preCapital_cbox = QCheckBox("Add")
+        preCapital_Date = QLabel("Date:")
+        self.preCapital_Date_edit = QLineEdit(f"{d1}")
         layout.addWidget(preCapital_CC_label, 4, 0)
         layout.addWidget(self.preCapital_CC_edit, 4, 1)
+        layout.addWidget(self.preCapital_cbox, 4, 8)
+        layout.addWidget(preCapital_Date, 4, 9)
+        layout.addWidget(self.preCapital_Date_edit, 4, 10)
 
         capitalone_CC_label = QLabel("Capital One CC Payment:")
+        capitalone_CC_label.setHidden(True)
         self.capitalone_CC_edit = QLineEdit("0")
         layout.addWidget(capitalone_CC_label, 4, 2)
         layout.addWidget(self.capitalone_CC_edit, 4, 3)
 
         postCapital_CC_label = QLabel("Capital One CC Remaining:")
+        postCapital_CC_label.setHidden(True)
         self.postCapital_CC_edit = QLineEdit("0")
         layout.addWidget(postCapital_CC_label, 4, 4)
         layout.addWidget(self.postCapital_CC_edit, 4, 5)
 
         capitalone_ref_label = QLabel("Capital One CC Reference Number:")
+        capitalone_ref_label.setHidden(True)
         self.capitalone_ref_edit = QLineEdit("0")
         layout.addWidget(capitalone_ref_label, 4, 6)
         layout.addWidget(self.capitalone_ref_edit, 4, 7)
@@ -340,8 +409,6 @@ class InsertDialog(QDialog):    # window to fill in new information.
 
     def add_Bills(self):          # below numbers to the table
 
-        # add date of payment
-
         # smCitiz = "Small Card "
         # totamount = self.preSM_Citizens_CC_edit.text()
         # preSMbal = smCitiz + totamount
@@ -350,46 +417,47 @@ class InsertDialog(QDialog):    # window to fill in new information.
         preSMbal = self.preSM_Citizens_CC_edit.text()
         sm_citiz_CCpay = self.sm_citiz_CC_edit.text()
         postSMrem = self.postSM_citiz_CC_edit.text()
-        smCitiz = "Small SmCiti Card "
         Smrefnum = self.sm_ref_num_edit.text()
-        sm_refnumb = smCitiz + Smrefnum
+        SMdate = self.preSM_Date_edit.text()
 
         # Large CC Citizensbank
         preLGbal = self.preLG_Citizens_CC_edit.text()
         lgcitiz_CCpay = self.lgcitiz_CC_edit.text()
         postLGrem = self.postLG_Citizens_CC_edit.text()
         lg_refnumb = self.lgc_ref_edit.text()
+        LGdate = self.preLG_Date_edit.text()
 
         # Chase 64
         pre64bal = self.pre64_Chase_CC_edit.text()
         chase64pay = self.chase64_CC_edit.text()
         post64rem = self.post64_Chase_CC_edit.text()
         chase64numb = self.ch64_ref_edit.text()
+        pre64date = self.pre64_Date_edit.text()
 
         # Chase 20
         pre20bal = self.pre20_Chase_CC_edit.text()
         chase20pay = self.chase20_CC_edit.text()
         post20rem = self.post20_Chase_CC_edit.text()
         chase20numb = self.ch20_ref_edit.text()
+        pre20date = self.pre20_Date_edit.text()
 
         # CapitalOne
         precapital = self.preCapital_CC_edit.text()
         capitalpay = self.capitalone_CC_edit.text()
         postcapital = self.postCapital_CC_edit.text()
         capitalnumb = self.capitalone_ref_edit.text()
+        capitaldate = self.preCapital_Date_edit.text()
 
-        # might have to add another column for date   below for example
-        # now = datetime.now()
-        # formatted_date = now.strftime('%Y-%m-%d')
-        # cursor.execute("INSERT INTO students (Balance, payment, remaining, number) VALUES (?, ?, ?, ?)",(preSMbal, sm_citiz_CCpay, postSMrem, sm_refnumb, formatted_date))
+        # ID", "Balance", "payment", "remaining", "number", "Date
 
-        connection = sqlite3.connect("database.db")
+        connection = DatabaseConnection().connect()
+        #connection = sqlite3.connect("database.db")
         cursor = connection.cursor()
-        cursor.execute("INSERT INTO students (Balance, payment, remaining, number) VALUES (?, ?, ?, ?)", (preSMbal, sm_citiz_CCpay, postSMrem, sm_refnumb))
-        cursor.execute("INSERT INTO students (Balance, payment, remaining, number) VALUES (?, ?, ?, ?)", (preLGbal, lgcitiz_CCpay, postLGrem, lg_refnumb))
-        cursor.execute("INSERT INTO students (Balance, payment, remaining, number) VALUES (?, ?, ?, ?)", (pre64bal, chase64pay, post64rem, chase64numb))
-        cursor.execute("INSERT INTO students (Balance, payment, remaining, number) VALUES (?, ?, ?, ?)", (pre20bal, chase20pay, post20rem, chase20numb))
-        cursor.execute("INSERT INTO students (Balance, payment, remaining, number) VALUES (?, ?, ?, ?)", (precapital, capitalpay, postcapital, capitalnumb))
+        cursor.execute("INSERT INTO students (Balance, payment, remaining, number, Date) VALUES (?, ?, ?, ?, ?)", (preSMbal, sm_citiz_CCpay, postSMrem, Smrefnum, SMdate))
+        cursor.execute("INSERT INTO students (Balance, payment, remaining, number, Date) VALUES (?, ?, ?, ?, ?)", (preLGbal, lgcitiz_CCpay, postLGrem, lg_refnumb, LGdate))
+        cursor.execute("INSERT INTO students (Balance, payment, remaining, number, Date) VALUES (?, ?, ?, ?, ?)", (pre64bal, chase64pay, post64rem, chase64numb, pre64date))
+        cursor.execute("INSERT INTO students (Balance, payment, remaining, number, Date) VALUES (?, ?, ?, ?, ?)", (pre20bal, chase20pay, post20rem, chase20numb, pre20date))
+        cursor.execute("INSERT INTO students (Balance, payment, remaining, number, Date) VALUES (?, ?, ?, ?, ?)", (precapital, capitalpay, postcapital, capitalnumb, capitaldate))
         connection.commit()
         cursor.close()
         connection.close()
@@ -443,7 +511,8 @@ class SearchFun(QDialog):       # window to fill in new information.
 
     def search(self):
         Balance = self.bill_edit.text()
-        connection = sqlite3.connect("database.db")
+        connection = DatabaseConnection().connect()
+        #connection = sqlite3.connect("database.db")
         cursor = connection.cursor()
         result = cursor.execute("SELECT * FROM students WHERE Balance = ?", (Balance,))
         rows = list(result)
@@ -465,6 +534,15 @@ class AboutDialog(QMessageBox):
         about = "This is the about section.  This program is design to store and recall previous payments and confirmation numbers.  Able to add, delete and edit all data."
 
         self.setText(about)
+
+class legend(QMessageBox):
+    def __init__(self):
+        super().__init__()
+        self.setWindowTitle("Legend")
+
+        legend = "Working to be changed.  First Row is CC.  Second Row is CC.  Third Row is CC.  Fourth Row is CC.  Fifth Row is CC."
+
+        self.setText(legend)
 
 
 app = QApplication(sys.argv)
